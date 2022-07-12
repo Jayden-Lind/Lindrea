@@ -1,0 +1,12 @@
+*__pycache__*
+/app-old.py
+/crontab copy
+/database
+/listings-11-07-later.json
+/listings-11-07.json
+/venv
+__pycache__/
+*.py[cod]
+*.pyc
+app.env
+db.env
