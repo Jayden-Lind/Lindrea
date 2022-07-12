@@ -1,0 +1,10 @@
+*__pycache__*
+/database
+/venv
+__pycache__/
+*.py[cod]
+*.pyc
+app.env
+db.env
+pgadmin.env
+app-th.env
