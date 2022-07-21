@@ -10,7 +10,7 @@ import os
 
 db_string = f"postgresql://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_SCHEMA')}"
 
-engine = create_engine(db_string, echo=True)
+engine = create_engine(db_string)
 
 
 Base = declarative_base()
@@ -35,6 +35,27 @@ for listing in realestate_com_au_listings:
         kwargs[property] = value
     kwargs['listing_id'] = kwargs['id']
     kwargs['id'] = None
-    print(listing.id)
-    session.add(Listings(**kwargs))
-    session.commit()
+    
+    #Check if listing has changed before inserting
+    listing_id_results = session.query(Listings).order_by(Listings.insert_date).filter(Listings.listing_id == listing.id).all()
+    latest_listing = listing_id_results[-1]
+    add_to_db = False
+    for property, value in vars(latest_listing).items():
+        if property == 'id':
+            continue
+        if property == 'listing_company':
+            continue
+        if property == 'insert_date':
+            continue
+        if property == '_sa_instance_state':
+            continue
+        if property == 'listing_id':
+            property = 'id'
+        if property == 'land_size' and type(value) == int:
+            value = str(value)
+        if value != getattr(listing, property):
+            add_to_db = True
+    if add_to_db:
+        print(listing)
+        session.add(Listings(**kwargs))
+        session.commit()
