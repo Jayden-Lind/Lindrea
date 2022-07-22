@@ -35,27 +35,31 @@ for listing in realestate_com_au_listings:
         kwargs[property] = value
     kwargs['listing_id'] = kwargs['id']
     kwargs['id'] = None
-    
+    add_to_db = False
     #Check if listing has changed before inserting
     listing_id_results = session.query(Listings).order_by(Listings.insert_date).filter(Listings.listing_id == listing.id).all()
-    latest_listing = listing_id_results[-1]
-    add_to_db = False
-    for property, value in vars(latest_listing).items():
-        if property == 'id':
-            continue
-        if property == 'listing_company':
-            continue
-        if property == 'insert_date':
-            continue
-        if property == '_sa_instance_state':
-            continue
-        if property == 'listing_id':
-            property = 'id'
-        if property == 'land_size' and type(value) == int:
-            value = str(value)
-        if value != getattr(listing, property):
-            add_to_db = True
+    if len(listing_id_results) == 0:
+        add_to_db  = True
+        print(f"${listing.url} is a new property!!!" )
+    else:
+        latest_listing = listing_id_results[-1]
+        for property, value in vars(latest_listing).items():
+            if property == 'id':
+                continue
+            if property == 'listing_company':
+                continue
+            if property == 'insert_date':
+                continue
+            if property == '_sa_instance_state':
+                continue
+            if property == 'listing_id':
+                property = 'id'
+            if property == 'land_size' and type(value) == int:
+                value = str(value)
+            if value != getattr(listing, property):
+                add_to_db = True
     if add_to_db:
         print(listing)
+        print(f"${listing.id} is being added!!!")
         session.add(Listings(**kwargs))
         session.commit()
