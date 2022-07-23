@@ -44,7 +44,7 @@ def main(query:int = 1):
                     continue
                 if val != getattr(first_listing_occurence, key):
                     if indiviual_changes == []:
-                        if listing_history.get(key) != val:
+                        if listing_history.get(key, "") != val:
                             time_delta = datetime.datetime.today() - listing_id.insert_date
                             indiviual_changes.append({key : val, "date" : listing_id.insert_date, "original_val" : getattr(first_listing_occurence, key)})
                     for change in indiviual_changes:
