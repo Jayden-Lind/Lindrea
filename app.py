@@ -8,19 +8,17 @@ from sqlalchemy import create_engine
 from models import Listings
 import os
 
-db_string = f"postgresql://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_SCHEMA')}"
+class db():
+    def __init__(self) -> None:
+        db_string = f"postgresql://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_SCHEMA')}"
+        engine = create_engine(db_string)
+        Base = declarative_base()
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+        #create table
+        Base.metadata.create_all(engine)
 
-engine = create_engine(db_string)
-
-
-Base = declarative_base()
-
-Session = sessionmaker(bind=engine)
-
-session = Session()
-
-#create table
-Base.metadata.create_all(engine)
+database = db()
 
 realestate_com_au_listings = api.search(
     locations=["Chelsea Heights, 3196", "Aspendale Gardens, 3195", "Patterson Lakes, 3197"],
@@ -30,27 +28,22 @@ realestate_com_au_listings = api.search(
 )
 
 for listing in realestate_com_au_listings:
-    kwargs = {}
-    for property, value in vars(listing).items():
-        kwargs[property] = value
-    kwargs['listing_id'] = kwargs['id']
-    kwargs['id'] = None
     add_to_db = False
     #Check if listing has changed before inserting
-    listing_id_results = session.query(Listings).order_by(Listings.insert_date).filter(Listings.listing_id == listing.id).all()
+    listing_id_results = database.session.query(Listings).order_by(Listings.insert_date).filter(Listings.listing_id == listing.id).all()
     if len(listing_id_results) == 0:
         add_to_db  = True
         print(f"${listing.url} is a new property!!!" )
     else:
+        skippable_properties = [
+            'id',
+            'listing_company',
+            'insert_date',
+            '_sa_instance_state'
+        ]
         latest_listing = listing_id_results[-1]
         for property, value in vars(latest_listing).items():
-            if property == 'id':
-                continue
-            if property == 'listing_company':
-                continue
-            if property == 'insert_date':
-                continue
-            if property == '_sa_instance_state':
+            if property in skippable_properties:
                 continue
             if property == 'listing_id':
                 property = 'id'
@@ -59,7 +52,11 @@ for listing in realestate_com_au_listings:
             if value != getattr(listing, property):
                 add_to_db = True
     if add_to_db:
-        print(listing)
-        print(f"${listing.id} is being added!!!")
-        session.add(Listings(**kwargs))
-        session.commit()
+        kwargs = {}
+        for property, value in vars(listing).items():
+            kwargs[property] = value
+        kwargs['listing_id'] = kwargs['id']
+        kwargs['id'] = None
+        print(f"{listing.id} is being added!!!")
+        database.session.add(Listings(**kwargs))
+        database.session.commit()
