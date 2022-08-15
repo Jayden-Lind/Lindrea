@@ -34,13 +34,13 @@ def main(query:int = 1):
         for listing_id in listing_id_results:
             
             for key,val in listing_id.__dict__.items():
-                if key == 'id':
-                    continue
-                if key == 'listing_company':
-                    continue
-                if key == 'insert_date':
-                    continue
-                if key == '_sa_instance_state':
+                skippable_properties = [
+                    'id',
+                    'listing_company',
+                    'insert_date',
+                    '_sa_instance_state'
+                ]
+                if key in skippable_properties:
                     continue
                 if val != getattr(first_listing_occurence, key):
                     if indiviual_changes == []:
