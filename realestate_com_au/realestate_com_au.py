@@ -22,7 +22,7 @@ class RealestateComAu(Fajita):
         "origin": "https://www.realestate.com.au",
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-site",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
     }
     _MAX_SEARCH_PAGE_SIZE = 100
     _DEFAULT_SEARCH_PAGE_SIZE = 25

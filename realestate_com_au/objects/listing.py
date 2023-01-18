@@ -76,7 +76,6 @@ def parse_phone(phone):
 def parse_description(description):
     if not description:
         return None
-    # return description.replace("<br/>", "\n")
     return description
 
 
@@ -102,8 +101,6 @@ def get_lister(lister):
 
 def get_listing(listing):
     listing = delete_nulls(listing)
-    # delete null keys for convenience
-
     property_id = listing.get("id")
     url = listing.get("_links", {}).get("canonical", {}).get("href")
     address = listing.get("address", {})

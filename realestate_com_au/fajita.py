@@ -12,7 +12,7 @@ def default_evade():
     A catch-all method to try and evade suspension.
     Currenly, just delays the request by a random (bounded) time
     """
-    sleep(random.randint(0, 1))  # sleep a random duration to try and evade suspention
+    sleep(random.randint(0, 1)) 
 
 
 logger = logging.getLogger(__name__)
