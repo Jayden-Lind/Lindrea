@@ -10,3 +10,4 @@ __pycache__/
 *.pyc
 app.env
 db.env
+pgadmin.env
