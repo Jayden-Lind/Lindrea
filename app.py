@@ -16,10 +16,12 @@ logging.basicConfig(
         force=True,
     )
 
+
 class Db():
     """Connects to DB creates a session, then creates
     the required table.
     """
+
     def __init__(self) -> None:
         db_string = f"postgresql://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_SCHEMA')}"
         engine = create_engine(db_string)
@@ -31,6 +33,7 @@ class Db():
         else:
             logging.info("Using current db")
 
+
 def insert_into_db(listing, db_conn):
     """Instantiates a sqlalchemy model to be inserted into the db_conn supplied
 
@@ -39,7 +42,7 @@ def insert_into_db(listing, db_conn):
         db_conn (db): Active DB connection to insert listing into
     """
     kwargs = {}
-    #transpose into dict to be created into Listing class
+    # transpose into dict to be created into Listing class
     for k, v in vars(listing).items():
         kwargs[k] = v
     kwargs['listing_id'] = kwargs['id']
@@ -47,6 +50,7 @@ def insert_into_db(listing, db_conn):
 
     db_conn.session.add(Listings(**kwargs))
     db_conn.session.commit()
+
 
 database = Db()
 
@@ -61,7 +65,7 @@ realestate_com_au_listings = api.search(
     sortType="new-desc"
 )
 
-#Values we don't care about if they change
+# Values we don't care about if they change
 skippable_properties = [
     'id',
     'listing_company',
@@ -77,7 +81,8 @@ for graphql_property_listing in realestate_com_au_listings:
 
     if len(listing_db_query_results) == 0:
         add_to_db = True
-        logging.info("Adding to DB: %s is a new property", graphql_property_listing.url)
+        logging.info("Adding to DB: %s is a new property",
+                     graphql_property_listing.url)
 
     if len(listing_db_query_results) > 0:
 
@@ -92,7 +97,8 @@ for graphql_property_listing in realestate_com_au_listings:
                 v = str(v)
             # If value is different, insert
             if v != getattr(graphql_property_listing, k):
-                logging.info("Adding to DB: %s has a new addition", graphql_property_listing.url)
+                logging.info("Adding to DB: %s has a new addition",
+                             graphql_property_listing.url)
                 add_to_db = True
 
     if add_to_db:

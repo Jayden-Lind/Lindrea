@@ -23,9 +23,7 @@ Session = sessionmaker(bind=engine)
 
 session = Session()
 
-results = session.query(Listings).order_by(
-    Listings.listing_id).distinct(Listings.listing_id).all()
-
+results = session.query(Listings).order_by(Listings.listing_id).distinct(Listings.listing_id).all()
 
 def main(query: int = 1):
 
@@ -52,8 +50,11 @@ def main(query: int = 1):
                     if indiviual_changes == []:
                         if listing_history.get(key, "") != val:
                             time_delta = datetime.datetime.today() - listing_id.insert_date
-                            indiviual_changes.append({key: val, "date": listing_id.insert_date, "original_val": getattr(
-                                first_listing_occurence, key)})
+                            indiviual_changes.append({
+                                key: val,
+                                "date": listing_id.insert_date,
+                                "original_val": getattr(first_listing_occurence, key)
+                            })
                     for change in indiviual_changes:
                         if change.get(key) == val:
                             continue
