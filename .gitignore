@@ -11,3 +11,4 @@ __pycache__/
 app.env
 db.env
 pgadmin.env
+app-th.env
