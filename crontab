@@ -1,1 +1,1 @@
-0 10,12,14,16,18,20 * * * python3 /root/app.py
+0 12,18 * * * python3 /root/app.py
