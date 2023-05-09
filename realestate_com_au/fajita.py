@@ -81,20 +81,78 @@ class Fajita(object):
         return self._client.session.post(url, **kwargs)
 
     def _scroll(
-        self, uri, method, parse_items, next_page_fn, done_fn, items=[], **kwargs
+        self, uri, method, parse_items, next_page_fn, done_fn, limit, channel,
+        locations,
+        surrounding_suburbs,
+        exclude_no_sale_price,
+        furnished,
+        pets_allowed,
+        ex_under_contract,
+        min_price,
+        max_price,
+        min_bedrooms,
+        max_bedrooms,
+        property_types,
+        min_bathrooms,
+        min_carspaces,
+        min_land_size,
+        construction_status,
+        keywords,
+        sortType,
+        items=[],
+        **kwargs
     ):
         res = None
         if method == "GET":
             res = self._get(uri, **kwargs)
         elif method == "POST":
             res = self._post(uri, **kwargs)
-        items = items + parse_items(res)
+        items = items + parse_items(res, channel)
 
-        if done_fn(items, res, **kwargs):
+        if done_fn(items, res, limit, channel, **kwargs):
             return items
 
-        new_kwargs = next_page_fn(**kwargs)
+        new_kwargs = next_page_fn(limit,
+        channel=channel,
+        locations = locations,
+        surrounding_suburbs = surrounding_suburbs,
+        exclude_no_sale_price = exclude_no_sale_price,
+        furnished = furnished,
+        pets_allowed = pets_allowed,
+        ex_under_contract = ex_under_contract,
+        min_price = min_price,
+        max_price = max_price,
+        min_bedrooms = min_bedrooms,
+        max_bedrooms = max_bedrooms,
+        property_types = property_types,
+        min_bathrooms = min_bathrooms,
+        min_carspaces = min_carspaces,
+        min_land_size = min_land_size,
+        construction_status = construction_status,
+        keywords = keywords,
+        sortType = sortType,
+        **kwargs
+        )
         return self._scroll(
-            uri, method, parse_items, next_page_fn, done_fn, items=items, **new_kwargs
+            uri, method, parse_items, next_page_fn, done_fn, limit, channel,
+            locations = locations,
+            surrounding_suburbs = surrounding_suburbs,
+            exclude_no_sale_price = exclude_no_sale_price,
+            furnished = furnished,
+            pets_allowed = pets_allowed,
+            ex_under_contract = ex_under_contract,
+            min_price = min_price,
+            max_price = max_price,
+            min_bedrooms = min_bedrooms,
+            max_bedrooms = max_bedrooms,
+            property_types = property_types,
+            min_bathrooms = min_bathrooms,
+            min_carspaces = min_carspaces,
+            min_land_size = min_land_size,
+            construction_status = construction_status,
+            keywords = keywords,
+            sortType = sortType,
+            items=items,
+            **new_kwargs
         )
 
