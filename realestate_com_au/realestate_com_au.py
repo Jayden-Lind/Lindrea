@@ -7,8 +7,10 @@ import json
 from .graphql import searchBuy, searchRent, searchSold
 from .objects.listing import get_listing
 from .fajita import Fajita
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
 
 def get_query(channel):
     if channel == "buy":
@@ -18,6 +20,109 @@ def get_query(channel):
         return searchSold.QUERY
 
     return searchRent.QUERY
+
+
+@dataclass
+class SearchVariables:
+    locations: list[str]
+    keywords: list[str]
+    property_types: list[
+        str
+    ]  # "unit apartment", "townhouse", "villa", "land", "acreage", "retire", "unitblock",
+    page: int = 1
+    limit: int = -1
+    channel: str = "buy"
+    surrounding_suburbs: bool = True
+    exclude_no_sale_price: bool = False
+    furnished: bool = False
+    pets_allowed: bool = False
+    ex_under_contract: bool = False
+    min_price: int = 0
+    max_price: int = -1
+    min_bedrooms: int = 0
+    max_bedrooms: int = -1
+    min_bathrooms: int = 0
+    min_carspaces: int = 0
+    min_land_size: int = 0
+    construction_status: str = None  # NEW, ESTABLISHED
+    sortType: str = "new-desc"
+
+    _MAX_SEARCH_PAGE_SIZE = 100
+    _DEFAULT_SEARCH_PAGE_SIZE = 25
+
+    def get_query_variables(
+        self,
+    ) -> dict:
+        query_variables = {
+            "channel": self.channel,
+            "page": self.page,
+            "sortType": self.sortType,
+            "pageSize": (
+                min(self.limit, self._MAX_SEARCH_PAGE_SIZE)
+                if self.limit
+                else self._DEFAULT_SEARCH_PAGE_SIZE
+            ),
+            "localities": [{"searchLocation": location} for location in self.locations],
+            "filters": {
+                "surroundingSuburbs": self.surrounding_suburbs,
+                "excludeNoSalePrice": self.exclude_no_sale_price,
+                "ex-under-contract": self.ex_under_contract,
+                "furnished": self.furnished,
+                "petsAllowed": self.pets_allowed,
+            },
+        }
+        if (self.max_price is not None and self.max_price > -1) or (
+            self.max_price is not None and self.min_price > 0
+        ):
+            price_filter = {}
+            if self.max_price > -1:
+                price_filter["maximum"] = str(self.max_price)
+            if self.min_price > 0:
+                price_filter["minimum"] = str(self.min_price)
+            query_variables["filters"]["priceRange"] = price_filter
+        if (self.max_bedrooms is not None and self.max_bedrooms > -1) or (
+            self.max_bedrooms is not None and self.min_bedrooms > 0
+        ):
+            beds_filter = {}
+            if self.max_bedrooms > -1:
+                beds_filter["maximum"] = str(self.max_bedrooms)
+            if self.min_bedrooms > 0:
+                beds_filter["minimum"] = str(self.min_bedrooms)
+            query_variables["filters"]["bedroomsRange"] = beds_filter
+        if self.property_types:
+            query_variables["filters"]["propertyTypes"] = self.property_types
+        if self.min_bathrooms is not None and self.min_bathrooms > 0:
+            query_variables["filters"]["minimumBathroom"] = str(self.min_bathrooms)
+        if self.min_carspaces is not None and self.min_carspaces > 0:
+            query_variables["filters"]["minimumCars"] = str(self.min_carspaces)
+        if self.min_land_size is not None and self.min_land_size > 0:
+            query_variables["filters"]["landSize"] = {
+                "minimum": str(self.min_land_size)
+            }
+        if self.construction_status:
+            query_variables["filters"]["constructionStatus"] = self.construction_status
+        if self.keywords:
+            query_variables["filters"]["keywords"] = {"terms": self.keywords}
+        if self.channel == "sold" and self.sortType:
+            query_variables["sortType"] = self.sortType
+        return query_variables
+
+    def get_payload(self) -> dict:
+        payload = {
+            "operationName": "searchByQuery",
+            "variables": {
+                "query": json.dumps(self.get_query_variables()),
+                "testListings": False,
+                "nullifyOptionals": False,
+            },
+            "query": get_query(self.channel),
+        }
+
+        if self.channel == "rent":
+            payload["variables"]["smartHide"] = False
+            payload["variables"]["recentHides"] = []
+
+        return payload
 
 
 class RealestateComAu(Fajita):
@@ -33,8 +138,6 @@ class RealestateComAu(Fajita):
         "sec-fetch-site": "same-site",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
     }
-    _MAX_SEARCH_PAGE_SIZE = 100
-    _DEFAULT_SEARCH_PAGE_SIZE = 25
 
     def __init__(
         self,
@@ -51,98 +154,6 @@ class RealestateComAu(Fajita):
         logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
         self.logger = logger
 
-    def get_query_variables(
-        self,
-        limit,
-        channel,
-        locations,
-        surrounding_suburbs,
-        exclude_no_sale_price,
-        furnished,
-        pets_allowed,
-        ex_under_contract,
-        min_price,
-        max_price,
-        min_bedrooms,
-        max_bedrooms,
-        property_types,
-        min_bathrooms,
-        min_carspaces,
-        min_land_size,
-        construction_status,
-        keywords,
-        sortType,
-        page=1,
-    ):
-        query_variables = {
-            "channel": channel,
-            "page": page,
-            "sortType": sortType,
-            "pageSize": (
-                min(limit, self._MAX_SEARCH_PAGE_SIZE)
-                if limit
-                else self._DEFAULT_SEARCH_PAGE_SIZE
-            ),
-            "localities": [{"searchLocation": location} for location in locations],
-            "filters": {
-                "surroundingSuburbs": surrounding_suburbs,
-                "excludeNoSalePrice": exclude_no_sale_price,
-                "ex-under-contract": ex_under_contract,
-                "furnished": furnished,
-                "petsAllowed": pets_allowed,
-            },
-        }
-        if (max_price is not None and max_price > -1) or (
-            max_price is not None and min_price > 0
-        ):
-            price_filter = {}
-            if max_price > -1:
-                price_filter["maximum"] = str(max_price)
-            if min_price > 0:
-                price_filter["minimum"] = str(min_price)
-            query_variables["filters"]["priceRange"] = price_filter
-        if (max_bedrooms is not None and max_bedrooms > -1) or (
-            max_bedrooms is not None and min_bedrooms > 0
-        ):
-            beds_filter = {}
-            if max_bedrooms > -1:
-                beds_filter["maximum"] = str(max_bedrooms)
-            if min_bedrooms > 0:
-                beds_filter["minimum"] = str(min_bedrooms)
-            query_variables["filters"]["bedroomsRange"] = beds_filter
-        if property_types:
-            query_variables["filters"]["propertyTypes"] = property_types
-        if min_bathrooms is not None and min_bathrooms > 0:
-            query_variables["filters"]["minimumBathroom"] = str(min_bathrooms)
-        if min_carspaces is not None and min_carspaces > 0:
-            query_variables["filters"]["minimumCars"] = str(min_carspaces)
-        if min_land_size is not None and min_land_size > 0:
-            query_variables["filters"]["landSize"] = {"minimum": str(min_land_size)}
-        if construction_status:
-            query_variables["filters"]["constructionStatus"] = construction_status
-        if keywords:
-            query_variables["filters"]["keywords"] = {"terms": keywords}
-        if channel == "sold" and sortType:
-            query_variables["sortType"] = sortType
-        return query_variables
-
-    def get_payload(self, query_variables, channel):
-        payload = {
-            "operationName": "searchByQuery",
-            "variables": {
-                "query": json.dumps(query_variables),
-                "testListings": False,
-                "nullifyOptionals": False,
-            },
-            "query": get_query(channel),
-        }
-
-        if channel == "rent":
-            payload["variables"]["smartHide"] = False
-            payload["variables"]["recentHides"] = []
-
-        return payload
-
     def parse_items(self, res, channel):
         data = res.json()
         results = data.get("data", {}).get(f"{channel}Search", {}).get("results", {})
@@ -157,60 +168,11 @@ class RealestateComAu(Fajita):
 
         return listings
 
-    def get_current_page(self, **kwargs):
-        current_query_variables = json.loads(kwargs["json"]["variables"]["query"])
-        return current_query_variables["page"]
-
-    def next_page(self, 
-                limit,
-                channel,
-                locations,
-                surrounding_suburbs,
-                exclude_no_sale_price,
-                furnished,
-                pets_allowed,
-                ex_under_contract,
-                min_price,
-                max_price,
-                min_bedrooms,
-                max_bedrooms,
-                property_types,
-                min_bathrooms,
-                min_carspaces,
-                min_land_size,
-                construction_status,
-                keywords,
-                sortType,
-                **kwargs):
-        current_page = self.get_current_page(**kwargs)
-        kwargs["json"] = self.get_payload(
-            self.get_query_variables(
-                limit,
-                channel,
-                locations,
-                surrounding_suburbs,
-                exclude_no_sale_price,
-                furnished,
-                pets_allowed,
-                ex_under_contract,
-                min_price,
-                max_price,
-                min_bedrooms,
-                max_bedrooms,
-                property_types,
-                min_bathrooms,
-                min_carspaces,
-                min_land_size,
-                construction_status,
-                keywords,
-                sortType,
-                page = current_page + 1,
-                ),
-            channel=channel
-            )
+    def next_page(self, search_object: SearchVariables, **kwargs):
+        kwargs["json"] = search_object.get_payload()
         return kwargs
 
-    def is_done(self, items, res, limit, channel, **kwargs):
+    def is_done(self, items: list, res, limit: int, channel: str, **kwargs):
         if not items:
             return True
         items_count = len(items)
@@ -255,57 +217,37 @@ class RealestateComAu(Fajita):
         keywords=[],
         sortType="sold-price-desc",
     ):
-
+        search = SearchVariables(
+            limit=limit,
+            channel=channel,
+            locations=locations,
+            surrounding_suburbs=surrounding_suburbs,
+            exclude_no_sale_price=exclude_no_sale_price,
+            furnished=furnished,
+            pets_allowed=pets_allowed,
+            ex_under_contract=ex_under_contract,
+            min_price=min_price,
+            max_price=max_price,
+            min_bedrooms=min_bedrooms,
+            max_bedrooms=max_bedrooms,
+            property_types=property_types,
+            min_bathrooms=min_bathrooms,
+            min_carspaces=min_carspaces,
+            min_land_size=min_land_size,
+            construction_status=construction_status,
+            keywords=keywords,
+            sortType=sortType,
+        )
         listings = self._scroll(
             "",
             "POST",
-            locations = locations,
-            surrounding_suburbs = surrounding_suburbs,
-            exclude_no_sale_price = exclude_no_sale_price,
-            furnished = furnished,
-            pets_allowed = pets_allowed,
-            ex_under_contract = ex_under_contract,
-            min_price = min_price,
-            max_price = max_price,
-            min_bedrooms = min_bedrooms,
-            max_bedrooms = max_bedrooms,
-            property_types = property_types,
-            min_bathrooms = min_bathrooms,
-            min_carspaces = min_carspaces,
-            min_land_size = min_land_size,
-            construction_status = construction_status,
-            keywords = keywords,
-            sortType = sortType,
-            parse_items = self.parse_items,
-            next_page_fn = self.next_page,
-            done_fn = self.is_done,
-            json=self.get_payload(
-                channel = channel,
-                query_variables = self.get_query_variables(
-                    limit,
-                    channel,
-                    locations,
-                    surrounding_suburbs,
-                    exclude_no_sale_price,
-                    furnished,
-                    pets_allowed,
-                    ex_under_contract,
-                    min_price,
-                    max_price,
-                    min_bedrooms,
-                    max_bedrooms,
-                    property_types,
-                    min_bathrooms,
-                    min_carspaces,
-                    min_land_size,
-                    construction_status,
-                    keywords,
-                    sortType,
-                    page=1,
-                )
-            ),
-            limit=limit,
-            channel=channel,
+            parse_items=self.parse_items,
+            next_page_fn=self.next_page,
+            done_fn=self.is_done,
+            json=search.get_payload(),
+            limit=search.limit,
+            channel=search.channel,
+            search_object=search,
         )
 
         return listings
