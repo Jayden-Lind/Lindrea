@@ -2,7 +2,8 @@
 from realestate_com_au.realestate_com_au import RealestateComAu, get_query, SearchVariables
 from realestate_com_au.graphql import searchBuy, searchRent, searchSold
 from tests.api_results import *
-import pytest
+from unittest.mock import MagicMock
+
 
 api = RealestateComAu()
 
@@ -74,7 +75,44 @@ def test_get_payload_buy() -> None:
     json_payload = search.get_payload()
     assert json_payload == good_json_payload
 
-
 def test_is_done() -> None:
     res = response_object()
     assert api.is_done([good_listing], res, -1, "buy") == True
+
+def test_is_done_fail() -> None:
+    res = MagicMock()
+    res.json.return_value = {
+        "data" : {
+            "buySearch" : {
+                "results" : {
+                    "totalResultsCount" : 99999,
+                    "pagination" : {
+                       "moreResultsAvailable" : "YES",
+                    },
+                    }
+                }
+            }
+        }
+    assert api.is_done([good_listing], res, -1, "buy") == False
+
+def test_parse_items() -> None:
+    res = MagicMock()
+    res.json.return_value = {
+        "data" : {
+            "buySearch" : {
+                "results" : {
+                    "totalResultsCount" : 99999,
+                    "pagination" : {
+                       "moreResultsAvailable" : "YES",
+                    },
+                    "exact" : {
+                        "items" : [
+                            {"listing" : json_response}
+                        ]
+                    }
+                    }
+                }
+            }
+    }
+    assert api.parse_items(res, "buy") == [json_response_listing]
+

@@ -43,7 +43,7 @@ class Fajita(object):
 
     def _get(self, uri, base_url=None, evade=default_evade, **kwargs):
         """
-        GET request to Linkedin API
+        GET request
         """
         if not self._fresh:
             evade()
@@ -54,7 +54,7 @@ class Fajita(object):
 
     def _post(self, uri, base_url=None, evade=default_evade, **kwargs):
         """
-        POST request to Linkedin API
+        POST request
         """
         if not self._fresh:
             evade()
@@ -70,12 +70,12 @@ class Fajita(object):
         parse_items,
         next_page_fn,
         done_fn,
-        limit,
-        channel,
         search_object,
         items=[],
         **kwargs,
     ):
+        limit = search_object.limit
+        channel = search_object.channel
         res = None
         if method == "GET":
             res = self._get(uri, **kwargs)
@@ -96,8 +96,6 @@ class Fajita(object):
             parse_items,
             next_page_fn,
             done_fn,
-            limit,
-            channel,
             search_object,
             items=items,
             **new_kwargs,

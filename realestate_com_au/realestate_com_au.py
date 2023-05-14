@@ -245,8 +245,6 @@ class RealestateComAu(Fajita):
             next_page_fn=self.next_page,
             done_fn=self.is_done,
             json=search.get_payload(),
-            limit=search.limit,
-            channel=search.channel,
             search_object=search,
         )
 
