@@ -1,6 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, PickleType, Float
+from sqlalchemy import Column, Integer, String, DateTime, PickleType
 
 
 Base = declarative_base()

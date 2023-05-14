@@ -1,11 +1,11 @@
 import logging
 import os
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from models import Listings
 
-class Db():
+
+class Db:
     """Connects to DB creates a session, then creates
     the required table.
     """
@@ -27,9 +27,10 @@ class Db():
 
 # Values we don't care about if they change
 skippable_properties = [
-    'id',
-    'listing_company',
-    'insert_date',
-    '_sa_instance_state',
-    'floorplan'
+    "id",
+    "listing_company",
+    "insert_date",
+    "_sa_instance_state",
+    "floorplan",
+    "listers",
 ]
