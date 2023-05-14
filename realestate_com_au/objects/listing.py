@@ -29,8 +29,6 @@ class Listing:
     statement_of_information: str
     floorplan: str
     listers: list = field(default_factory=list)
-    
-    
 
 
 @dataclass

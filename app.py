@@ -11,7 +11,7 @@ logging.basicConfig(
     force=True,
 )
 
-def insert_into_db(listing, db_conn: Db):
+def insert_into_db(listing: Listings, db_conn: Db):
     """Instantiates a sqlalchemy model to be inserted into the db_conn supplied
 
     Args:

@@ -115,4 +115,3 @@ def test_parse_items() -> None:
             }
     }
     assert api.parse_items(res, "buy") == [json_response_listing]
-
